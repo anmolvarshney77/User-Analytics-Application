@@ -82,6 +82,29 @@ If the script is served from the **same origin** as the API, you can omit `data-
 npm run build
 ```
 
+## Deploy to Render (Blueprint)
+
+This repo ships a [`render.yaml`](./render.yaml) Blueprint that deploys two web services to [Render](https://render.com): the API (`ua-api`) and the Next.js dashboard (`ua-web`). MongoDB is **not** provisioned by the blueprint — bring your own MongoDB Atlas cluster.
+
+1. **Push this repo to GitHub / GitLab** (Render needs access to the source).
+2. In the Render dashboard go to **New → Blueprint**, connect the repo, and pick the branch. Render will detect `render.yaml` and create both services.
+3. On first deploy Render will prompt for these `sync: false` env vars:
+   - `ua-api` → `MONGODB_URI` — your Atlas connection string (must include the DB name in the path, e.g. `...mongodb.net/analytics?...`).
+   - `ua-api` → `CORS_ORIGINS` — comma-separated origins with no trailing slash. Include the `ua-web` public URL (e.g. `https://ua-web.onrender.com`) plus the API's own URL if you'll serve the demo from it (e.g. `https://ua-api.onrender.com`).
+   - `ua-web` → `NEXT_PUBLIC_API_BASE` — the public URL of `ua-api`, e.g. `https://ua-api.onrender.com` (no trailing slash).
+4. After the URLs are known, open `ua-web` → **Manual Deploy → Clear build cache & deploy** so `NEXT_PUBLIC_API_BASE` is baked into the Next.js bundle.
+5. Health check: `GET https://ua-api.onrender.com/health` should return `{"ok":true,"db":true}`. Then open `https://ua-web.onrender.com/sessions`.
+
+> Render's free plan spins web services down on inactivity; the first request after a cold start can take 30–60 s. Upgrade to a paid plan to avoid this.
+
+To use the tracker on your own site after deploy:
+
+```html
+<script src="https://ua-api.onrender.com/tracker.js" data-endpoint="https://ua-api.onrender.com" defer></script>
+```
+
+Make sure your site's origin is included in `CORS_ORIGINS` on the `ua-api` service.
+
 ## Appendix: local MongoDB with Docker
 
 ```bash

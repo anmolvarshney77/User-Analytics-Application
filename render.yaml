@@ -1,0 +1,66 @@
+# Render Blueprint for the User Analytics Application
+# Docs: https://render.com/docs/blueprint-spec
+#
+# This blueprint deploys TWO web services from this monorepo:
+#   1) ua-api  -> Express + Mongoose API (also serves /tracker.js and /demo/)
+#   2) ua-web  -> Next.js dashboard
+#
+# MongoDB is NOT provisioned here. Reuse your existing MongoDB Atlas cluster
+# and paste the connection string into the MONGODB_URI env var on first deploy.
+#
+# After first deploy you must set 3 "sync: false" env vars in the Render dashboard:
+#   ua-api  -> MONGODB_URI         (your Atlas connection string)
+#   ua-api  -> CORS_ORIGINS        (comma-separated, include the ua-web public URL)
+#   ua-web  -> NEXT_PUBLIC_API_BASE (the ua-api public URL, e.g. https://ua-api.onrender.com)
+# Then trigger a manual deploy of ua-web so the value is baked into the Next.js build.
+
+services:
+  # ----------------------------------------------------------------------------
+  # API service: Express + Mongoose. Also serves the built tracker.js and /demo/.
+  # ----------------------------------------------------------------------------
+  - type: web
+    name: ua-api
+    runtime: node
+    plan: free
+    region: oregon
+    rootDir: .
+    autoDeploy: true
+    healthCheckPath: /health
+    buildCommand: npm install --include=dev && npm run build:tracker && npm run build --workspace server
+    startCommand: npm start --workspace server
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: NODE_ENV
+        value: production
+      # PORT is injected by Render automatically; do not override.
+      - key: MONGODB_URI
+        sync: false
+      # Must include the ua-web public URL (and any other site that embeds tracker.js).
+      # Example: https://ua-web.onrender.com,https://your-site.com
+      - key: CORS_ORIGINS
+        sync: false
+
+  # ----------------------------------------------------------------------------
+  # Dashboard service: Next.js 16. Reads from ua-api at build + runtime.
+  # NEXT_PUBLIC_* vars are inlined at build time, so changing the API URL
+  # requires a rebuild of this service.
+  # ----------------------------------------------------------------------------
+  - type: web
+    name: ua-web
+    runtime: node
+    plan: free
+    region: oregon
+    rootDir: .
+    autoDeploy: true
+    buildCommand: npm install --include=dev && npm run build --workspace web
+    startCommand: npm start --workspace web
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: NODE_ENV
+        value: production
+      # Public URL of the ua-api service, no trailing slash.
+      # Example: https://ua-api.onrender.com
+      - key: NEXT_PUBLIC_API_BASE
+        sync: false
