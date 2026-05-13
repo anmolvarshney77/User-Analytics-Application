@@ -95,6 +95,20 @@ This repo ships a [`render.yaml`](./render.yaml) Blueprint that deploys two web 
 4. After you set or change `NEXT_PUBLIC_API_BASE`, open `ua-web` → **Manual Deploy → Clear build cache & deploy** so the value is baked into the Next.js bundle. The Sessions page reads this at build time; wrong host = `Sessions failed: 503`.
 5. Health check: `GET https://<your-ua-api-host>/health` should return `{"ok":true,"db":true}`. Then open `https://<your-ua-web-host>/sessions`.
 
+### Showcase / live demo flow
+
+Once deployed, you can demo the entire pipeline end-to-end:
+
+1. Open the dashboard: `https://<your-ua-web-host>/sessions`.
+2. Click the **Open demo ↗** button in the top-right of the dashboard nav (it opens the API-served demo page at `https://<your-ua-api-host>/demo/` in a new tab).
+3. On the demo page, scroll and click the buttons / pills / corner targets.
+4. Switch back to the dashboard tab and refresh:
+   - **Sessions** — your session UUID appears with the event count.
+   - **Sessions → Journey** — every `page_view` and `click` in time order with `pageX`/`pageY` and document size.
+   - **Heatmap** — pick the demo URL from the dropdown to see the click distribution.
+
+The demo page bundles `/tracker.js` from the same origin, so no extra CORS configuration is needed for it.
+
 > Render's free plan spins web services down on inactivity; the first request after a cold start can take 30–60 s. Upgrade to a paid plan to avoid this.
 
 To use the tracker on your own site after deploy:

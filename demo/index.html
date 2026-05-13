@@ -3,97 +3,306 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Analytics demo — scroll & click</title>
+    <title>User analytics — interactive demo</title>
     <style>
       :root {
-        font-family: system-ui, sans-serif;
-        line-height: 1.5;
-        color: #0f172a;
-        background: #f8fafc;
+        --bg: #0b1020;
+        --panel: #121933;
+        --panel-2: #1a2147;
+        --text: #e6e9f5;
+        --muted: #9aa3c7;
+        --accent: #7c5cff;
+        --accent-2: #22d3ee;
+        --good: #34d399;
+        --warn: #f59e0b;
+        --danger: #ef4444;
+        --border: rgba(255, 255, 255, 0.08);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Helvetica, Arial, system-ui, sans-serif;
+        line-height: 1.55;
+        color: var(--text);
+        background: radial-gradient(1200px 600px at 10% -10%, #1c2350 0%, transparent 60%),
+          radial-gradient(900px 500px at 100% 0%, #2a1a55 0%, transparent 55%),
+          var(--bg);
       }
-      body {
-        margin: 0;
-        padding: 0 1rem 4rem;
-        max-width: 42rem;
-        margin-inline: auto;
+      * { box-sizing: border-box; }
+      body { margin: 0; padding: 0 1rem 5rem; }
+      .wrap { max-width: 60rem; margin-inline: auto; }
+      .banner {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        margin: 0 -1rem;
+        padding: 0.75rem 1rem;
+        background: linear-gradient(90deg, rgba(124, 92, 255, 0.18), rgba(34, 211, 238, 0.18));
+        border-bottom: 1px solid var(--border);
+        backdrop-filter: blur(8px);
+        font-size: 0.9rem;
+        color: var(--text);
+        text-align: center;
       }
-      header {
-        padding: 2rem 0 1rem;
-        border-bottom: 1px solid #e2e8f0;
-        margin-bottom: 2rem;
+      .banner b { color: #fff; }
+      header.hero {
+        padding: 3rem 0 1.5rem;
+        text-align: center;
+      }
+      header.hero .badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 999px;
+        background: rgba(124, 92, 255, 0.18);
+        color: #c8baff;
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        margin-bottom: 1rem;
       }
       h1 {
-        font-size: 1.5rem;
+        font-size: clamp(1.75rem, 4vw, 2.75rem);
+        line-height: 1.15;
+        margin: 0 0 0.75rem;
+        letter-spacing: -0.02em;
+      }
+      h2 {
+        font-size: 1.25rem;
         margin: 0 0 0.5rem;
+        color: #fff;
+      }
+      p.lead {
+        max-width: 38rem;
+        margin: 0 auto;
+        color: var(--muted);
       }
       section {
-        margin-bottom: 3rem;
-        padding: 1.25rem;
-        background: #fff;
-        border-radius: 0.75rem;
-        box-shadow: 0 1px 3px rgb(15 23 42 / 0.08);
+        margin: 2rem 0;
+        padding: 1.5rem;
+        background: linear-gradient(180deg, var(--panel), var(--panel-2));
+        border: 1px solid var(--border);
+        border-radius: 1rem;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
       }
-      .cta {
-        display: inline-block;
-        margin: 0.25rem 0.5rem 0.25rem 0;
-        padding: 0.5rem 1rem;
-        border-radius: 0.5rem;
-        border: none;
-        background: #2563eb;
-        color: #fff;
-        font-weight: 600;
+      .grid {
+        display: grid;
+        gap: 0.75rem;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      }
+      .btn {
+        appearance: none;
         cursor: pointer;
+        font: inherit;
+        font-weight: 600;
+        padding: 0.7rem 1rem;
+        border-radius: 0.65rem;
+        border: 1px solid transparent;
+        color: #fff;
+        background: var(--accent);
+        transition: transform 0.05s ease, background 0.15s ease, border-color 0.15s ease;
       }
-      .cta.secondary {
-        background: #64748b;
-      }
-      .spacer {
-        height: 120vh;
-        background: linear-gradient(180deg, #e0f2fe 0%, #fae8ff 100%);
+      .btn:hover { background: #6c4cff; }
+      .btn:active { transform: translateY(1px); }
+      .btn.secondary { background: rgba(255, 255, 255, 0.06); border-color: var(--border); }
+      .btn.secondary:hover { background: rgba(255, 255, 255, 0.1); }
+      .btn.cyan { background: var(--accent-2); color: #06222a; }
+      .btn.cyan:hover { background: #34dbf0; }
+      .btn.success { background: var(--good); color: #052e21; }
+      .btn.warn { background: var(--warn); color: #2a1707; }
+      .btn.danger { background: var(--danger); color: #2a0707; }
+      .card {
+        padding: 1rem;
         border-radius: 0.75rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.125rem;
-        color: #475569;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--border);
+      }
+      .card h3 { margin: 0 0 0.35rem; font-size: 1rem; color: #fff; }
+      .card p { margin: 0; color: var(--muted); font-size: 0.9rem; }
+      .pills { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+      .pill {
+        padding: 0.45rem 0.85rem;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text);
+        border: 1px solid var(--border);
+        cursor: pointer;
+        font-size: 0.85rem;
+      }
+      .pill:hover { background: rgba(255, 255, 255, 0.1); }
+      .spacer {
+        height: 70vh;
+        margin: 2rem 0;
+        display: grid;
+        place-items: center;
+        border-radius: 1rem;
+        background:
+          radial-gradient(400px 200px at 30% 40%, rgba(124, 92, 255, 0.35), transparent 60%),
+          radial-gradient(400px 200px at 70% 60%, rgba(34, 211, 238, 0.25), transparent 60%),
+          rgba(255, 255, 255, 0.02);
+        border: 1px dashed var(--border);
+        color: var(--muted);
+        text-align: center;
+        padding: 1rem;
+      }
+      .corner-targets {
+        position: relative;
+        height: 320px;
+        border-radius: 0.75rem;
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid var(--border);
+        overflow: hidden;
+      }
+      .corner-targets .btn {
+        position: absolute;
+        padding: 0.45rem 0.7rem;
+        font-size: 0.85rem;
+      }
+      .corner-targets .tl { top: 0.75rem; left: 0.75rem; }
+      .corner-targets .tr { top: 0.75rem; right: 0.75rem; }
+      .corner-targets .bl { bottom: 0.75rem; left: 0.75rem; }
+      .corner-targets .br { bottom: 0.75rem; right: 0.75rem; }
+      .corner-targets .mid {
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
       }
       footer {
-        margin-top: 2rem;
-        font-size: 0.875rem;
-        color: #64748b;
+        margin-top: 3rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--border);
+        text-align: center;
+        font-size: 0.85rem;
+        color: var(--muted);
+      }
+      code { background: rgba(255,255,255,0.06); padding: 0.1rem 0.35rem; border-radius: 0.35rem; font-size: 0.85em; }
+      .meta { margin-top: 0.5rem; font-size: 0.8rem; color: var(--muted); }
+      a.dash {
+        color: #c8baff;
+        text-decoration: underline;
+        text-underline-offset: 3px;
       }
     </style>
-    <!-- Served from http://localhost:4000/demo/ — tracker posts to same origin -->
+    <!-- Tracker is served from the same origin (the API) and auto-detects its endpoint. -->
     <script src="/tracker.js" defer></script>
   </head>
   <body>
-    <header>
-      <h1>User analytics demo</h1>
-      <p>
-        Open this page via the API server:
-        <strong>http://localhost:4000/demo/</strong> — then scroll and click
-        buttons. Events use document-space coordinates (<code>pageX</code> /
-        <code>pageY</code>).
-      </p>
-    </header>
+    <div class="banner">
+      Click anywhere and scroll around. Then switch back to the
+      <b>User analytics dashboard</b> tab and refresh
+      <code>/sessions</code> and <code>/heatmap</code> to see your activity.
+    </div>
 
-    <section>
-      <h2>Above the fold</h2>
-      <p>Click targets send <code>click</code> events; load sends <code>page_view</code>.</p>
-      <button type="button" class="cta">Primary action</button>
-      <button type="button" class="cta secondary">Secondary</button>
-    </section>
+    <div class="wrap">
+      <header class="hero">
+        <span class="badge">Live tracker demo</span>
+        <h1>Click. Scroll. Watch it land in the dashboard.</h1>
+        <p class="lead">
+          Every click on this page sends a <code>click</code> event to the API
+          with <code>pageX</code>/<code>pageY</code> and document size. The page
+          load sent a <code>page_view</code>. Sessions are keyed by a UUID in
+          <code>localStorage</code>.
+        </p>
+      </header>
 
-    <div class="spacer">Scroll down — clicks below use page coordinates including scroll.</div>
+      <section>
+        <h2>Quick actions</h2>
+        <p class="meta">Click any of these to register events near the top of the page.</p>
+        <div class="grid" style="margin-top: 1rem;">
+          <button class="btn">Get started</button>
+          <button class="btn cyan">Watch the demo</button>
+          <button class="btn secondary">Read the docs</button>
+          <button class="btn success">Sign up free</button>
+          <button class="btn warn">Upgrade plan</button>
+          <button class="btn danger">Delete account</button>
+        </div>
+      </section>
 
-    <section>
-      <h2>Below the fold</h2>
-      <p>After scrolling, click here to verify heatmap alignment in the dashboard.</p>
-      <button type="button" class="cta">Deep click</button>
-    </section>
+      <section>
+        <h2>Choose a topic</h2>
+        <p class="meta">Pills are easy click targets — great for stress-testing the heatmap.</p>
+        <div class="pills" style="margin-top: 1rem;">
+          <span class="pill">Analytics</span>
+          <span class="pill">Heatmaps</span>
+          <span class="pill">Sessions</span>
+          <span class="pill">Funnels</span>
+          <span class="pill">Cohorts</span>
+          <span class="pill">Retention</span>
+          <span class="pill">A/B testing</span>
+          <span class="pill">Tracking</span>
+          <span class="pill">Pricing</span>
+          <span class="pill">Privacy</span>
+          <span class="pill">SDKs</span>
+          <span class="pill">Self-host</span>
+        </div>
+      </section>
 
-    <footer>
-      Tracker script: <code>/tracker.js</code> · API: <code>/api/events</code>
-    </footer>
+      <section>
+        <h2>Feature cards</h2>
+        <div class="grid" style="margin-top: 1rem;">
+          <div class="card">
+            <h3>Session journeys</h3>
+            <p>Every event in time order, with pageX/pageY.</p>
+            <button class="btn secondary" style="margin-top: 0.75rem;">Open journey</button>
+          </div>
+          <div class="card">
+            <h3>Heatmaps</h3>
+            <p>Document-space clicks, normalized per event.</p>
+            <button class="btn secondary" style="margin-top: 0.75rem;">View heatmap</button>
+          </div>
+          <div class="card">
+            <h3>Tiny tracker</h3>
+            <p>Minified, IIFE, no deps. Drop one script tag.</p>
+            <button class="btn secondary" style="margin-top: 0.75rem;">Copy snippet</button>
+          </div>
+        </div>
+      </section>
+
+      <div class="spacer">↓ Scroll — clicks below use page coordinates including scroll ↓</div>
+
+      <section>
+        <h2>Corner targets</h2>
+        <p class="meta">Five precise positions to make the heatmap easy to read.</p>
+        <div class="corner-targets" style="margin-top: 1rem;">
+          <button class="btn tl">Top-left</button>
+          <button class="btn tr cyan">Top-right</button>
+          <button class="btn mid success">Center</button>
+          <button class="btn bl warn">Bottom-left</button>
+          <button class="btn br danger">Bottom-right</button>
+        </div>
+      </section>
+
+      <section>
+        <h2>Below the fold</h2>
+        <p class="meta">
+          Useful for confirming the heatmap correctly normalizes deep clicks by
+          each event's document height.
+        </p>
+        <div class="grid" style="margin-top: 1rem;">
+          <button class="btn">Deep click 1</button>
+          <button class="btn cyan">Deep click 2</button>
+          <button class="btn success">Deep click 3</button>
+          <button class="btn warn">Deep click 4</button>
+        </div>
+      </section>
+
+      <div class="spacer">Even further down. Try a few clicks here too.</div>
+
+      <section>
+        <h2>What just happened?</h2>
+        <p class="meta">
+          On load the tracker generated (or reused) a session UUID in
+          <code>localStorage</code> and sent <code>page_view</code>. Each click
+          you made sent <code>click</code> with the document-space coordinates
+          of the click and the document's full width/height. The API stores
+          them in MongoDB. The dashboard reads <code>/api/sessions</code>,
+          <code>/api/sessions/:id/events</code>, and
+          <code>/api/heatmap?pageUrl=...</code>.
+        </p>
+      </section>
+
+      <footer>
+        Tracker script: <code>/tracker.js</code> · API endpoint: <code>/api/events</code>
+        <br />
+        Now switch back to the dashboard tab and refresh Sessions / Heatmap.
+      </footer>
+    </div>
   </body>
 </html>

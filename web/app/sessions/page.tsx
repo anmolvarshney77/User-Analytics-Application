@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { fetchSessions } from "@/lib/api";
+import { apiBase, fetchSessions } from "@/lib/api";
 
 function formatDate(iso: string) {
   try {
@@ -40,8 +40,16 @@ export default async function SessionsPage() {
           </p>
         </div>
       ) : rows.length === 0 ? (
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 px-6 py-12 text-center text-zinc-400">
-          No sessions yet. Send events from the demo page, then refresh.
+        <div className="flex flex-col items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-900/50 px-6 py-12 text-center text-zinc-400">
+          <p>No sessions yet. Open the demo page, click around, then refresh this page.</p>
+          <a
+            href={`${apiBase}/demo/`}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-500"
+          >
+            Open demo page ↗
+          </a>
         </div>
       ) : (
         <div className="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900/40 shadow-xl shadow-black/20">
