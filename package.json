@@ -1,0 +1,15 @@
+{
+  "name": "user-analytics-application",
+  "private": true,
+  "scripts": {
+    "build:tracker": "node tracker/build.mjs",
+    "dev:server": "npm run build:tracker && npm run dev -w server",
+    "dev:web": "npm run dev -w web",
+    "dev": "npm run build:tracker && concurrently \"npm run dev -w server\" \"npm run dev -w web\"",
+    "build": "npm run build:tracker && npm run build -w server && npm run build -w web"
+  },
+  "workspaces": ["server", "web", "tracker"],
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}
