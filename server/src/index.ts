@@ -32,6 +32,16 @@ app.use(
   })
 );
 
+app.get("/", (_req, res) => {
+  res.json({
+    service: "user-analytics-api",
+    health: "/health",
+    demo: "/demo/",
+    tracker: "/tracker.js",
+    events: "POST /api/events",
+  });
+});
+
 const publicDir = path.join(__dirname, "..", "public");
 app.use(express.static(publicDir));
 app.use("/demo", express.static(path.join(__dirname, "..", "..", "demo")));

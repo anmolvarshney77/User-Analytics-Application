@@ -8,11 +8,11 @@
 # MongoDB is NOT provisioned here. Reuse your existing MongoDB Atlas cluster
 # and paste the connection string into the MONGODB_URI env var on first deploy.
 #
-# After first deploy you must set 3 "sync: false" env vars in the Render dashboard:
-#   ua-api  -> MONGODB_URI         (your Atlas connection string)
-#   ua-api  -> CORS_ORIGINS        (comma-separated, include the ua-web public URL)
-#   ua-web  -> NEXT_PUBLIC_API_BASE (the ua-api public URL, e.g. https://ua-api.onrender.com)
-# Then trigger a manual deploy of ua-web so the value is baked into the Next.js build.
+# After first deploy, set the 3 "sync: false" env vars using each service's REAL
+# hostname from the Render dashboard (e.g. https://ua-api-q3e5.onrender.com). Short
+# names like ua-api.onrender.com may belong to someone else if the name was taken.
+#   ua-api  -> MONGODB_URI, CORS_ORIGINS (include ua-web's exact URL)
+#   ua-web  -> NEXT_PUBLIC_API_BASE (ua-api's exact URL; then Clear build cache & deploy)
 
 services:
   # ----------------------------------------------------------------------------

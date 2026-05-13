@@ -88,12 +88,12 @@ This repo ships a [`render.yaml`](./render.yaml) Blueprint that deploys two web 
 
 1. **Push this repo to GitHub / GitLab** (Render needs access to the source).
 2. In the Render dashboard go to **New → Blueprint**, connect the repo, and pick the branch. Render will detect `render.yaml` and create both services.
-3. On first deploy Render will prompt for these `sync: false` env vars:
+3. On first deploy Render will prompt for these `sync: false` env vars. **Use the exact public URLs Render assigns** (open each service → copy the URL from the top of the page). If a name like `ua-api` is already taken globally, Render uses a suffix such as `https://ua-api-q3e5.onrender.com` — that full hostname is what you must use everywhere; `https://ua-api.onrender.com` without the suffix is often **not** your service and the dashboard will show `503` errors.
    - `ua-api` → `MONGODB_URI` — your Atlas connection string (must include the DB name in the path, e.g. `...mongodb.net/analytics?...`).
-   - `ua-api` → `CORS_ORIGINS` — comma-separated origins with no trailing slash. Include the `ua-web` public URL (e.g. `https://ua-web.onrender.com`) plus the API's own URL if you'll serve the demo from it (e.g. `https://ua-api.onrender.com`).
-   - `ua-web` → `NEXT_PUBLIC_API_BASE` — the public URL of `ua-api`, e.g. `https://ua-api.onrender.com` (no trailing slash).
-4. After the URLs are known, open `ua-web` → **Manual Deploy → Clear build cache & deploy** so `NEXT_PUBLIC_API_BASE` is baked into the Next.js bundle.
-5. Health check: `GET https://ua-api.onrender.com/health` should return `{"ok":true,"db":true}`. Then open `https://ua-web.onrender.com/sessions`.
+   - `ua-api` → `CORS_ORIGINS` — comma-separated origins with no trailing slash. Include your **actual** `ua-web` URL (e.g. `https://ua-web-q528.onrender.com`) and your **actual** `ua-api` URL if you use `/demo/` from the API host.
+   - `ua-web` → `NEXT_PUBLIC_API_BASE` — your **actual** `ua-api` URL (e.g. `https://ua-api-q3e5.onrender.com`, no trailing slash).
+4. After you set or change `NEXT_PUBLIC_API_BASE`, open `ua-web` → **Manual Deploy → Clear build cache & deploy** so the value is baked into the Next.js bundle. The Sessions page reads this at build time; wrong host = `Sessions failed: 503`.
+5. Health check: `GET https://<your-ua-api-host>/health` should return `{"ok":true,"db":true}`. Then open `https://<your-ua-web-host>/sessions`.
 
 > Render's free plan spins web services down on inactivity; the first request after a cold start can take 30–60 s. Upgrade to a paid plan to avoid this.
 
