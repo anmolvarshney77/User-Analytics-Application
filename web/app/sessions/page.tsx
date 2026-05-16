@@ -1,19 +1,12 @@
 import Link from "next/link";
 import { AlertBanner } from "@/components/AlertBanner";
+import { DemoLink } from "@/components/DemoLink";
 import { DemoWalkthrough } from "@/components/DemoWalkthrough";
+import { EmptyState } from "@/components/EmptyState";
 import { PageHeader } from "@/components/PageHeader";
-import { apiBase, fetchSessions } from "@/lib/api";
-
-function formatDate(iso: string) {
-  try {
-    return new Intl.DateTimeFormat(undefined, {
-      dateStyle: "medium",
-      timeStyle: "short",
-    }).format(new Date(iso));
-  } catch {
-    return iso;
-  }
-}
+import { fetchSessions } from "@/lib/api";
+import { errorMessage, formatDateTime } from "@/lib/format";
+import { healthUrl } from "@/lib/urls";
 
 function StatCard({ label, value }: { label: string; value: string | number }) {
   return (
@@ -30,7 +23,7 @@ export default async function SessionsPage() {
   try {
     rows = await fetchSessions();
   } catch (e) {
-    error = e instanceof Error ? e.message : "Could not load sessions";
+    error = errorMessage(e, "Could not load sessions");
   }
 
   const totalEvents = rows.reduce((sum, r) => sum + r.event_count, 0);
@@ -49,13 +42,13 @@ export default async function SessionsPage() {
           <p>{error}</p>
           <p className="text-xs opacity-80">
             On Render free tier, wait 1–2 minutes and refresh. Wake the API first:{" "}
-            <a href={`${apiBase}/health`} className="underline" target="_blank" rel="noreferrer">
+            <a href={healthUrl} className="underline" target="_blank" rel="noreferrer">
               /health
             </a>
           </p>
         </AlertBanner>
       ) : rows.length === 0 ? (
-        <div className="flex flex-col items-center gap-4 rounded-xl border border-dashed border-zinc-700 bg-zinc-900/40 px-6 py-14 text-center">
+        <EmptyState>
           <p className="text-5xl opacity-40" aria-hidden>
             ◉
           </p>
@@ -63,15 +56,8 @@ export default async function SessionsPage() {
             No sessions yet. Use <strong className="text-zinc-200">Open demo</strong> above, click around, then refresh
             this page.
           </p>
-          <a
-            href={`${apiBase}/demo/`}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-violet-500"
-          >
-            Open demo page ↗
-          </a>
-        </div>
+          <DemoLink variant="button" label="Open demo page ↗" className="px-4 py-2.5" />
+        </EmptyState>
       ) : (
         <>
           <div className="grid gap-3 sm:grid-cols-3">
@@ -79,7 +65,7 @@ export default async function SessionsPage() {
             <StatCard label="Total events" value={totalEvents} />
             <StatCard
               label="Latest activity"
-              value={rows[0] ? formatDate(rows[0].last_seen) : "—"}
+              value={rows[0] ? formatDateTime(rows[0].last_seen) : "—"}
             />
           </div>
 
@@ -111,8 +97,8 @@ export default async function SessionsPage() {
                           {r.event_count}
                         </span>
                       </td>
-                      <td className="px-4 py-3.5 text-zinc-400">{formatDate(r.first_seen)}</td>
-                      <td className="px-4 py-3.5 text-zinc-400">{formatDate(r.last_seen)}</td>
+                      <td className="px-4 py-3.5 text-zinc-400">{formatDateTime(r.first_seen)}</td>
+                      <td className="px-4 py-3.5 text-zinc-400">{formatDateTime(r.last_seen)}</td>
                       <td className="px-4 py-3.5 text-right">
                         <Link
                           href={`/sessions/${encodeURIComponent(r.session_id)}`}

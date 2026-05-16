@@ -1,9 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { AlertBanner } from "@/components/AlertBanner";
+import { DemoLink } from "@/components/DemoLink";
 import { DemoWalkthrough } from "@/components/DemoWalkthrough";
 import { PageHeader } from "@/components/PageHeader";
-import { apiBase, fetchHeatmap, fetchPageUrls, type HeatmapClick } from "@/lib/api";
+import { fetchHeatmap, fetchPageUrls, type HeatmapClick } from "@/lib/api";
+import { errorMessage } from "@/lib/format";
+import { demoUrl } from "@/lib/urls";
 
 function DotPlot({ clicks }: { clicks: HeatmapClick[] }) {
   const aspect = useMemo(() => {
@@ -88,7 +92,6 @@ export default function HeatmapPage() {
   }, []);
 
   const effectiveUrl = customUrl.trim() || selected;
-  const demoUrl = `${apiBase}/demo/`;
 
   useEffect(() => {
     let cancelled = false;
@@ -110,7 +113,7 @@ export default function HeatmapPage() {
         if (!cancelled) setClicks(data);
       } catch (e) {
         if (!cancelled) {
-          setError(e instanceof Error ? e.message : "Load failed");
+          setError(errorMessage(e, "Load failed"));
           setClicks([]);
         }
       } finally {
@@ -156,10 +159,7 @@ export default function HeatmapPage() {
             </select>
             {urls.length === 0 && (
               <p className="text-xs text-zinc-600">
-                No URLs yet. Try{" "}
-                <a href={demoUrl} target="_blank" rel="noreferrer" className="text-violet-400 underline">
-                  {demoUrl}
-                </a>
+                No URLs yet. Try <DemoLink variant="inline" label={demoUrl} />
               </p>
             )}
           </div>
@@ -187,13 +187,14 @@ export default function HeatmapPage() {
           >
             {loading ? "Loading…" : "Refresh heatmap"}
           </button>
-          {error && (
-            <p className="max-w-xl text-sm text-red-400" role="alert">
-              {error}
-            </p>
-          )}
         </div>
       </div>
+
+      {error ? (
+        <AlertBanner variant="error" title="Could not load heatmap">
+          <p>{error}</p>
+        </AlertBanner>
+      ) : null}
 
       {loading && !clicks.length ? (
         <div className="flex min-h-[280px] animate-pulse items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900/40 text-sm text-zinc-500">

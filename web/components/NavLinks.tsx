@@ -4,9 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const links = [
-  { href: "/sessions", label: "Sessions", match: (p: string) => p === "/sessions" || p.startsWith("/sessions/") },
-  { href: "/heatmap", label: "Heatmap", match: (p: string) => p === "/heatmap" },
+  { href: "/sessions", label: "Sessions" },
+  { href: "/heatmap", label: "Heatmap" },
 ];
+
+function isActive(pathname: string, href: string) {
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
 
 export function NavLinks() {
   const pathname = usePathname();
@@ -14,7 +18,7 @@ export function NavLinks() {
   return (
     <>
       {links.map((l) => {
-        const active = l.match(pathname);
+        const active = isActive(pathname, l.href);
         return (
           <Link
             key={l.href}

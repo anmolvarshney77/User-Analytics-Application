@@ -1,17 +1,8 @@
-import Link from "next/link";
 import { AlertBanner } from "@/components/AlertBanner";
+import { BackLink } from "@/components/BackLink";
+import { EmptyState } from "@/components/EmptyState";
 import { fetchSessionEvents } from "@/lib/api";
-
-function formatTime(iso: string) {
-  try {
-    return new Intl.DateTimeFormat(undefined, {
-      dateStyle: "medium",
-      timeStyle: "medium",
-    }).format(new Date(iso));
-  } catch {
-    return iso;
-  }
-}
+import { errorMessage, formatDateTime } from "@/lib/format";
 
 export default async function SessionJourneyPage({
   params,
@@ -26,7 +17,7 @@ export default async function SessionJourneyPage({
   try {
     events = await fetchSessionEvents(sessionId);
   } catch (e) {
-    error = e instanceof Error ? e.message : "Failed to load events";
+    error = errorMessage(e, "Failed to load events");
   }
 
   const pageViews = events.filter((e) => e.type === "page_view").length;
@@ -35,12 +26,7 @@ export default async function SessionJourneyPage({
   return (
     <div className="space-y-8">
       <div>
-        <Link
-          href="/sessions"
-          className="inline-flex items-center gap-1 text-sm font-medium text-violet-400 transition hover:text-violet-300"
-        >
-          ← Back to sessions
-        </Link>
+        <BackLink href="/sessions">← Back to sessions</BackLink>
         <h1 className="mt-3 text-2xl font-bold tracking-tight text-white sm:text-3xl">Session journey</h1>
         <p className="mt-2 break-all font-mono text-xs text-zinc-500 sm:text-sm">{sessionId}</p>
       </div>
@@ -50,9 +36,7 @@ export default async function SessionJourneyPage({
           <p>{error}</p>
         </AlertBanner>
       ) : events.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-zinc-700 bg-zinc-900/40 px-6 py-12 text-center text-zinc-400">
-          No events for this session.
-        </div>
+        <EmptyState className="px-6 py-12 text-zinc-400">No events for this session.</EmptyState>
       ) : (
         <>
           <div className="flex flex-wrap gap-3">
@@ -86,7 +70,7 @@ export default async function SessionJourneyPage({
                     >
                       {ev.type.replace("_", " ")}
                     </span>
-                    <time className="text-xs text-zinc-500">{formatTime(ev.timestamp)}</time>
+                    <time className="text-xs text-zinc-500">{formatDateTime(ev.timestamp, "medium")}</time>
                   </div>
                   <p className="mt-2 break-all font-mono text-xs text-zinc-400 sm:text-sm">{ev.page_url}</p>
                   {ev.type === "click" && ev.x != null && ev.y != null && (

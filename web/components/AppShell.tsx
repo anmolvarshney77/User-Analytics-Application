@@ -1,10 +1,9 @@
 import Link from "next/link";
 import { apiBase } from "@/lib/api";
+import { DemoLink } from "./DemoLink";
 import { NavLinks } from "./NavLinks";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const demoUrl = `${apiBase}/demo/`;
-
   return (
     <div className="relative flex min-h-full flex-col bg-zinc-950 text-zinc-100">
       <div
@@ -31,14 +30,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </Link>
           <nav className="flex flex-wrap items-center gap-1">
             <NavLinks />
-            <a
-              href={demoUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="ml-1 rounded-lg bg-violet-600 px-3 py-2 text-sm font-semibold text-white shadow-md shadow-violet-900/30 transition hover:bg-violet-500 hover:shadow-violet-800/40"
-            >
-              Open demo ↗
-            </a>
+            <DemoLink variant="nav" />
           </nav>
         </div>
       </header>
