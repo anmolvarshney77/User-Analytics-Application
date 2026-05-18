@@ -4,7 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import { AlertBanner } from "@/components/AlertBanner";
 import { DemoLink } from "@/components/DemoLink";
 import { DemoWalkthrough } from "@/components/DemoWalkthrough";
+import { EmptyState } from "@/components/EmptyState";
 import { PageHeader } from "@/components/PageHeader";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { FormField, inputClassName } from "@/components/ui/FormField";
 import { fetchHeatmap, fetchPageUrls, type HeatmapClick } from "@/lib/api";
 import { errorMessage } from "@/lib/format";
 import { demoUrl } from "@/lib/urls";
@@ -20,17 +24,16 @@ function DotPlot({ clicks }: { clicks: HeatmapClick[] }) {
 
   if (!clicks.length) {
     return (
-      <div className="flex min-h-[280px] flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-zinc-700 bg-zinc-900/40 px-6 text-center text-sm text-zinc-500">
-        <p>No clicks for this URL yet.</p>
-        <p className="text-xs text-zinc-600">Generate clicks on the demo page, then refresh.</p>
-      </div>
+      <EmptyState title="No clicks for this URL yet" className="min-h-[280px] justify-center py-12">
+        <p className="text-sm text-zinc-500">Generate clicks on the demo page, then refresh.</p>
+      </EmptyState>
     );
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900/50 shadow-xl shadow-black/30">
+    <Card variant="elevated" className="overflow-hidden">
       <div className="border-b border-zinc-800 px-4 py-3">
-        <p className="text-xs text-zinc-500">
+        <p className="text-xs leading-relaxed text-zinc-500">
           Normalized document space — each dot at (x ÷ width, y ÷ height) for that event&apos;s snapshot.
         </p>
         <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-zinc-400">
@@ -69,7 +72,7 @@ function DotPlot({ clicks }: { clicks: HeatmapClick[] }) {
           })}
         </div>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -135,12 +138,19 @@ export default function HeatmapPage() {
 
       <DemoWalkthrough />
 
-      <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 sm:p-5">
+      <Card className="p-4 sm:p-5">
         <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <label htmlFor="known-url" className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-              Known URLs
-            </label>
+          <FormField
+            id="known-url"
+            label="Known URLs"
+            hint={
+              urls.length === 0 ? (
+                <>
+                  No URLs yet. Try <DemoLink variant="inline" label={demoUrl} />.
+                </>
+              ) : undefined
+            }
+          >
             <select
               id="known-url"
               value={selected}
@@ -148,7 +158,7 @@ export default function HeatmapPage() {
                 setSelected(e.target.value);
                 setCustomUrl("");
               }}
-              className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2.5 text-sm text-white outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/25"
+              className={inputClassName}
             >
               <option value="">— Select —</option>
               {urls.map((u) => (
@@ -157,38 +167,29 @@ export default function HeatmapPage() {
                 </option>
               ))}
             </select>
-            {urls.length === 0 && (
-              <p className="text-xs text-zinc-600">
-                No URLs yet. Try <DemoLink variant="inline" label={demoUrl} />
-              </p>
-            )}
-          </div>
-          <div className="space-y-2">
-            <label htmlFor="custom-url" className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-              Or paste exact URL
-            </label>
+          </FormField>
+          <FormField id="custom-url" label="Or paste exact URL">
             <input
               id="custom-url"
               type="url"
               placeholder={demoUrl}
               value={customUrl}
               onChange={(e) => setCustomUrl(e.target.value)}
-              className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2.5 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/25"
+              className={inputClassName}
             />
-          </div>
+          </FormField>
         </div>
 
-        <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-zinc-800 pt-4">
-          <button
+        <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-zinc-800/90 pt-4">
+          <Button
             type="button"
             onClick={() => setRefreshKey((k) => k + 1)}
             disabled={loading || !effectiveUrl.trim()}
-            className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading ? "Loading…" : "Refresh heatmap"}
-          </button>
+          </Button>
         </div>
-      </div>
+      </Card>
 
       {error ? (
         <AlertBanner variant="error" title="Could not load heatmap">
@@ -197,9 +198,9 @@ export default function HeatmapPage() {
       ) : null}
 
       {loading && !clicks.length ? (
-        <div className="flex min-h-[280px] animate-pulse items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900/40 text-sm text-zinc-500">
+        <Card className="flex min-h-[280px] animate-pulse items-center justify-center text-sm text-zinc-500">
           Loading heatmap…
-        </div>
+        </Card>
       ) : (
         <DotPlot clicks={clicks} />
       )}

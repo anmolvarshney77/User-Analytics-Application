@@ -1,21 +1,14 @@
-import Link from "next/link";
 import { AlertBanner } from "@/components/AlertBanner";
 import { DemoLink } from "@/components/DemoLink";
 import { DemoWalkthrough } from "@/components/DemoWalkthrough";
 import { EmptyState } from "@/components/EmptyState";
 import { PageHeader } from "@/components/PageHeader";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { StatCard } from "@/components/ui/StatCard";
 import { fetchSessions } from "@/lib/api";
 import { errorMessage, formatDateTime } from "@/lib/format";
 import { healthUrl } from "@/lib/urls";
-
-function StatCard({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 px-4 py-3 shadow-sm">
-      <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">{label}</p>
-      <p className="mt-1 text-2xl font-bold tabular-nums text-white">{value}</p>
-    </div>
-  );
-}
 
 export default async function SessionsPage() {
   let rows: Awaited<ReturnType<typeof fetchSessions>> = [];
@@ -40,20 +33,17 @@ export default async function SessionsPage() {
       {error ? (
         <AlertBanner variant="warning" title="Could not reach the API">
           <p>{error}</p>
-          <p className="text-xs opacity-80">
+          <p className="text-xs opacity-90">
             On Render free tier, wait 1–2 minutes and refresh. Wake the API first:{" "}
-            <a href={healthUrl} className="underline" target="_blank" rel="noreferrer">
+            <a href={healthUrl} target="_blank" rel="noreferrer">
               /health
             </a>
           </p>
         </AlertBanner>
       ) : rows.length === 0 ? (
-        <EmptyState>
-          <p className="text-5xl opacity-40" aria-hidden>
-            ◉
-          </p>
-          <p className="max-w-md text-zinc-400">
-            No sessions yet. Use <strong className="text-zinc-200">Open demo</strong> above, click around, then refresh
+        <EmptyState title="No sessions yet">
+          <p className="max-w-md text-sm text-zinc-400">
+            Use <strong className="font-medium text-zinc-200">Open demo</strong> above, click around, then refresh
             this page.
           </p>
           <DemoLink variant="button" label="Open demo page ↗" className="px-4 py-2.5" />
@@ -69,21 +59,23 @@ export default async function SessionsPage() {
             />
           </div>
 
-          <div className="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900/50 shadow-xl shadow-black/30">
+          <Card variant="elevated" className="overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[640px] text-left text-sm">
                 <thead>
                   <tr className="border-b border-zinc-800 bg-zinc-900/90 text-xs font-semibold uppercase tracking-wider text-zinc-500">
-                    <th className="px-4 py-3.5">Session</th>
-                    <th className="px-4 py-3.5">Events</th>
-                    <th className="px-4 py-3.5">First seen</th>
-                    <th className="px-4 py-3.5">Last seen</th>
-                    <th className="px-4 py-3.5 text-right"> </th>
+                    <th className="px-4 py-3.5 font-medium">Session</th>
+                    <th className="px-4 py-3.5 font-medium">Events</th>
+                    <th className="px-4 py-3.5 font-medium">First seen</th>
+                    <th className="px-4 py-3.5 font-medium">Last seen</th>
+                    <th className="px-4 py-3.5 text-right font-medium">
+                      <span className="sr-only">Actions</span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-800/80">
                   {rows.map((r) => (
-                    <tr key={r.session_id} className="transition hover:bg-violet-500/5">
+                    <tr key={r.session_id} className="transition-colors hover:bg-violet-500/[0.06]">
                       <td className="px-4 py-3.5">
                         <span
                           className="line-clamp-1 max-w-[200px] font-mono text-xs text-violet-300 sm:max-w-xs sm:text-sm"
@@ -93,26 +85,27 @@ export default async function SessionsPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3.5">
-                        <span className="inline-flex min-w-[2rem] items-center justify-center rounded-full bg-zinc-800 px-2 py-0.5 text-xs font-semibold tabular-nums text-zinc-200">
+                        <span className="inline-flex min-w-8 items-center justify-center rounded-full bg-zinc-800 px-2 py-0.5 text-xs font-semibold tabular-nums text-zinc-200 ring-1 ring-zinc-700/50">
                           {r.event_count}
                         </span>
                       </td>
                       <td className="px-4 py-3.5 text-zinc-400">{formatDateTime(r.first_seen)}</td>
                       <td className="px-4 py-3.5 text-zinc-400">{formatDateTime(r.last_seen)}</td>
                       <td className="px-4 py-3.5 text-right">
-                        <Link
+                        <Button
                           href={`/sessions/${encodeURIComponent(r.session_id)}`}
-                          className="inline-flex rounded-lg bg-violet-600/90 px-3 py-1.5 text-xs font-semibold text-white ring-1 ring-violet-500/30 transition hover:bg-violet-500"
+                          variant="compact"
+                          size="sm"
                         >
                           Journey →
-                        </Link>
+                        </Button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-          </div>
+          </Card>
         </>
       )}
     </div>
