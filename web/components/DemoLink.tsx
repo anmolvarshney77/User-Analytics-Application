@@ -1,11 +1,10 @@
 import { demoUrl } from "@/lib/urls";
-import { cn } from "@/lib/cn";
-import { buttonVariants } from "./ui/Button";
 
 const variants = {
-  nav: cn(buttonVariants.primary, "ml-1 shadow-md"),
-  button: cn(buttonVariants.primary, "px-4 py-2"),
-  inline: "text-violet-400 underline decoration-violet-500/40 underline-offset-2 transition hover:text-violet-300",
+  nav: "ml-1 rounded-lg bg-violet-600 px-3 py-2 text-sm font-semibold text-white shadow-md shadow-violet-900/30 transition hover:bg-violet-500 hover:shadow-violet-800/40",
+  button:
+    "inline-flex items-center justify-center rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white shadow-md shadow-violet-900/40 transition hover:bg-violet-500",
+  inline: "text-violet-400 underline transition hover:text-violet-300",
 } as const;
 
 export function DemoLink({
@@ -22,11 +21,7 @@ export function DemoLink({
       href={demoUrl}
       target="_blank"
       rel="noreferrer"
-      className={cn(
-        variant !== "inline" && "inline-flex items-center justify-center rounded-lg text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/60 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950",
-        variants[variant],
-        className,
-      )}
+      className={className ?? variants[variant]}
     >
       {label}
     </a>
