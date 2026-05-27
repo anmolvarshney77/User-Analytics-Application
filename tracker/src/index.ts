@@ -1,4 +1,16 @@
 const SESSION_KEY = "ua_session_id";
+const FLUSH_MS = 3000;
+const MAX_BATCH = 20;
+
+const STRIP_QUERY_PARAMS = [
+  "utm_source",
+  "utm_medium",
+  "utm_campaign",
+  "utm_term",
+  "utm_content",
+  "fbclid",
+  "gclid",
+];
 
 function uuid(): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -42,6 +54,21 @@ function getIngestKey(): string | null {
   return null;
 }
 
+/** Same page with different UTM/hash fragments maps to one heatmap URL. */
+function canonicalPageUrl(): string {
+  try {
+    const u = new URL(location.href);
+    u.hash = "";
+    for (const name of STRIP_QUERY_PARAMS) u.searchParams.delete(name);
+    let path = u.pathname;
+    if (path.length > 1 && path.endsWith("/")) path = path.slice(0, -1);
+    u.pathname = path;
+    return u.toString();
+  } catch {
+    return location.href.split("#")[0] ?? location.href;
+  }
+}
+
 function documentDimensions(): { document_width: number; document_height: number } {
   const el = document.documentElement;
   const body = document.body;
@@ -64,14 +91,12 @@ function nowIso(): string {
   return new Date().toISOString();
 }
 
-function sendEvent(payload: Record<string, unknown>): void {
+const queue: Record<string, unknown>[] = [];
+let flushTimer: ReturnType<typeof setTimeout> | null = null;
+
+function postPayload(body: string, ingestKey: string | null): void {
   const base = getApiBase();
   const url = `${base}/api/events`;
-  const ingestKey = getIngestKey();
-  const envelope: Record<string, unknown> = ingestKey
-    ? { ...payload, api_key: ingestKey }
-    : payload;
-  const body = JSON.stringify(envelope);
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (ingestKey) headers["X-Analytics-Key"] = ingestKey;
 
@@ -91,11 +116,39 @@ function sendEvent(payload: Record<string, unknown>): void {
   }).catch(() => {});
 }
 
+function flush(): void {
+  if (flushTimer != null) {
+    clearTimeout(flushTimer);
+    flushTimer = null;
+  }
+  if (!queue.length) return;
+
+  const events = queue.splice(0, queue.length);
+  const ingestKey = getIngestKey();
+  const envelope: Record<string, unknown> = { events };
+  if (ingestKey) envelope.api_key = ingestKey;
+  postPayload(JSON.stringify(envelope), ingestKey);
+}
+
+function scheduleFlush(): void {
+  if (queue.length >= MAX_BATCH) {
+    flush();
+    return;
+  }
+  if (flushTimer != null) return;
+  flushTimer = setTimeout(flush, FLUSH_MS);
+}
+
+function enqueue(event: Record<string, unknown>): void {
+  queue.push(event);
+  scheduleFlush();
+}
+
 function trackPageView(): void {
-  sendEvent({
+  enqueue({
     session_id: getSessionId(),
     type: "page_view",
-    page_url: location.href,
+    page_url: canonicalPageUrl(),
     timestamp: nowIso(),
   });
 }
@@ -103,10 +156,10 @@ function trackPageView(): void {
 function onPointerClick(ev: MouseEvent): void {
   if (!(ev instanceof MouseEvent)) return;
   const { document_width, document_height } = documentDimensions();
-  sendEvent({
+  enqueue({
     session_id: getSessionId(),
     type: "click",
-    page_url: location.href,
+    page_url: canonicalPageUrl(),
     timestamp: nowIso(),
     x: ev.pageX,
     y: ev.pageY,
@@ -117,3 +170,7 @@ function onPointerClick(ev: MouseEvent): void {
 
 trackPageView();
 document.addEventListener("click", onPointerClick, true);
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") flush();
+});
+window.addEventListener("pagehide", flush);

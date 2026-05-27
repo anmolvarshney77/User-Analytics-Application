@@ -4,9 +4,11 @@ import { DemoLink } from "@/components/DemoLink";
 import { DemoWalkthrough } from "@/components/DemoWalkthrough";
 import { EmptyState } from "@/components/EmptyState";
 import { PageHeader } from "@/components/PageHeader";
-import { fetchSessions } from "@/lib/api";
+import { fetchSessions, type SessionsResponse } from "@/lib/api";
 import { errorMessage, formatDateTime } from "@/lib/format";
 import { healthUrl } from "@/lib/urls";
+
+const PAGE_SIZE = 50;
 
 function StatCard({ label, value }: { label: string; value: string | number }) {
   return (
@@ -17,15 +19,26 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
   );
 }
 
-export default async function SessionsPage() {
-  let rows: Awaited<ReturnType<typeof fetchSessions>> = [];
+export default async function SessionsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const { page: pageParam } = await searchParams;
+  const page = Math.max(1, Number(pageParam) || 1);
+  const offset = (page - 1) * PAGE_SIZE;
+
+  let data: SessionsResponse | null = null;
   let error: string | null = null;
   try {
-    rows = await fetchSessions();
+    data = await fetchSessions(PAGE_SIZE, offset);
   } catch (e) {
     error = errorMessage(e, "Could not load sessions");
   }
 
+  const rows = data?.sessions ?? [];
+  const total = data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const totalEvents = rows.reduce((sum, r) => sum + r.event_count, 0);
 
   return (
@@ -47,7 +60,7 @@ export default async function SessionsPage() {
             </a>
           </p>
         </AlertBanner>
-      ) : rows.length === 0 ? (
+      ) : total === 0 ? (
         <EmptyState>
           <p className="text-5xl opacity-40" aria-hidden>
             ◉
@@ -61,8 +74,8 @@ export default async function SessionsPage() {
       ) : (
         <>
           <div className="grid gap-3 sm:grid-cols-3">
-            <StatCard label="Sessions" value={rows.length} />
-            <StatCard label="Total events" value={totalEvents} />
+            <StatCard label="Sessions (all)" value={total} />
+            <StatCard label="Events on this page" value={totalEvents} />
             <StatCard
               label="Latest activity"
               value={rows[0] ? formatDateTime(rows[0].last_seen) : "—"}
@@ -113,6 +126,32 @@ export default async function SessionsPage() {
               </table>
             </div>
           </div>
+
+          {totalPages > 1 ? (
+            <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-zinc-400">
+              <span>
+                Page {page} of {totalPages} · showing {offset + 1}–{Math.min(offset + PAGE_SIZE, total)} of {total}
+              </span>
+              <div className="flex gap-2">
+                {page > 1 ? (
+                  <Link
+                    href={page === 2 ? "/sessions" : `/sessions?page=${page - 1}`}
+                    className="rounded-lg border border-zinc-700 px-3 py-1.5 transition hover:border-violet-500 hover:text-white"
+                  >
+                    ← Previous
+                  </Link>
+                ) : null}
+                {page < totalPages ? (
+                  <Link
+                    href={`/sessions?page=${page + 1}`}
+                    className="rounded-lg border border-zinc-700 px-3 py-1.5 transition hover:border-violet-500 hover:text-white"
+                  >
+                    Next →
+                  </Link>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
         </>
       )}
     </div>

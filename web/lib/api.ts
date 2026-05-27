@@ -55,8 +55,22 @@ export type HeatmapClick = {
   timestamp: string;
 };
 
-export async function fetchSessions(): Promise<SessionSummary[]> {
-  const res = await fetchWithRetry(`${apiBase}/api/sessions`, { cache: "no-store" });
+export type SessionsResponse = {
+  sessions: SessionSummary[];
+  total: number;
+  limit: number;
+  offset: number;
+};
+
+export async function fetchSessions(
+  limit = 50,
+  offset = 0
+): Promise<SessionsResponse> {
+  const q = new URLSearchParams({
+    limit: String(limit),
+    offset: String(offset),
+  });
+  const res = await fetchWithRetry(`${apiBase}/api/sessions?${q}`, { cache: "no-store" });
   assertOk(res, "Sessions");
   return res.json();
 }
@@ -75,9 +89,22 @@ export async function fetchPageUrls(): Promise<string[]> {
   return data.page_urls ?? [];
 }
 
-export async function fetchHeatmap(pageUrl: string): Promise<HeatmapClick[]> {
-  const q = encodeURIComponent(pageUrl);
-  const res = await fetchWithRetry(`${apiBase}/api/heatmap?pageUrl=${q}`, { cache: "no-store" });
+export type HeatmapResponse = {
+  clicks: HeatmapClick[];
+  total: number;
+  limit: number;
+  truncated: boolean;
+  since: string | null;
+};
+
+export async function fetchHeatmap(
+  pageUrl: string,
+  options?: { limit?: number; since?: string }
+): Promise<HeatmapResponse> {
+  const q = new URLSearchParams({ pageUrl });
+  if (options?.limit != null) q.set("limit", String(options.limit));
+  if (options?.since) q.set("since", options.since);
+  const res = await fetchWithRetry(`${apiBase}/api/heatmap?${q}`, { cache: "no-store" });
   assertOk(res, "Heatmap");
   return res.json();
 }

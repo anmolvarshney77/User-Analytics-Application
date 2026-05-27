@@ -78,6 +78,8 @@ export default function HeatmapPage() {
   const [selected, setSelected] = useState("");
   const [customUrl, setCustomUrl] = useState("");
   const [clicks, setClicks] = useState<HeatmapClick[]>([]);
+  const [truncated, setTruncated] = useState(false);
+  const [clickTotal, setClickTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -102,6 +104,8 @@ export default function HeatmapPage() {
       if (cancelled) return;
       if (!url) {
         setClicks([]);
+        setTruncated(false);
+        setClickTotal(0);
         setError(null);
         setLoading(false);
         return;
@@ -110,11 +114,17 @@ export default function HeatmapPage() {
       setError(null);
       try {
         const data = await fetchHeatmap(url);
-        if (!cancelled) setClicks(data);
+        if (!cancelled) {
+          setClicks(data.clicks);
+          setTruncated(data.truncated);
+          setClickTotal(data.total);
+        }
       } catch (e) {
         if (!cancelled) {
           setError(errorMessage(e, "Load failed"));
           setClicks([]);
+          setTruncated(false);
+          setClickTotal(0);
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -193,6 +203,15 @@ export default function HeatmapPage() {
       {error ? (
         <AlertBanner variant="error" title="Could not load heatmap">
           <p>{error}</p>
+        </AlertBanner>
+      ) : null}
+
+      {truncated ? (
+        <AlertBanner variant="warning" title="Showing a sample of clicks">
+          <p>
+            Loaded {clicks.length} of {clickTotal} clicks (server cap). Narrow with a date filter via API{" "}
+            <code className="text-xs">?since=ISO</code> if you add UI later.
+          </p>
         </AlertBanner>
       ) : null}
 
