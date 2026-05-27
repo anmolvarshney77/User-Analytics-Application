@@ -24,13 +24,22 @@ function getSessionId(): string {
   }
 }
 
+function scriptEl(): HTMLScriptElement | null {
+  return document.currentScript as HTMLScriptElement | null;
+}
+
 function getApiBase(): string {
-  const current = document.currentScript as HTMLScriptElement | null;
-  const fromAttr = current?.getAttribute("data-endpoint");
+  const fromAttr = scriptEl()?.getAttribute("data-endpoint");
   if (fromAttr != null && fromAttr.trim() !== "") {
     return fromAttr.replace(/\/$/, "");
   }
   return `${location.protocol}//${location.host}`;
+}
+
+function getIngestKey(): string | null {
+  const fromAttr = scriptEl()?.getAttribute("data-api-key");
+  if (fromAttr != null && fromAttr.trim() !== "") return fromAttr.trim();
+  return null;
 }
 
 function documentDimensions(): { document_width: number; document_height: number } {
@@ -58,9 +67,16 @@ function nowIso(): string {
 function sendEvent(payload: Record<string, unknown>): void {
   const base = getApiBase();
   const url = `${base}/api/events`;
-  const body = JSON.stringify(payload);
+  const ingestKey = getIngestKey();
+  const envelope: Record<string, unknown> = ingestKey
+    ? { ...payload, api_key: ingestKey }
+    : payload;
+  const body = JSON.stringify(envelope);
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (ingestKey) headers["X-Analytics-Key"] = ingestKey;
+
   try {
-    if (navigator.sendBeacon) {
+    if (navigator.sendBeacon && ingestKey == null) {
       const blob = new Blob([body], { type: "application/json" });
       if (navigator.sendBeacon(url, blob)) return;
     }
@@ -69,7 +85,7 @@ function sendEvent(payload: Record<string, unknown>): void {
   }
   void fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body,
     keepalive: true,
   }).catch(() => {});

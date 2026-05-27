@@ -40,6 +40,9 @@ services:
       # Example: https://ua-web.onrender.com,https://your-site.com
       - key: CORS_ORIGINS
         sync: false
+      # Recommended: random string; demo page gets it via /demo/ HTML injection.
+      - key: INGEST_API_KEY
+        sync: false
 
   # ----------------------------------------------------------------------------
   # Dashboard service: Next.js 16. Reads from ua-api at build + runtime.

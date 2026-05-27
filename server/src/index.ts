@@ -10,7 +10,13 @@ import { serveDemoPage } from "./demoPage.js";
 import { assertProductionEnv, corsOriginOption } from "./env.js";
 import { Event } from "./models/Event.js";
 import { requireIngestKey } from "./requireIngestKey.js";
+import { parseLimit, parseOffset, parseSince } from "./parseQuery.js";
 import { normalizeEvent, type IncomingEvent } from "./validateEvent.js";
+
+const SESSIONS_DEFAULT_LIMIT = 50;
+const SESSIONS_MAX_LIMIT = 200;
+const HEATMAP_DEFAULT_LIMIT = 2000;
+const HEATMAP_MAX_LIMIT = 5000;
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -78,12 +84,18 @@ app.post(
 
 app.get(
   "/api/sessions",
-  asyncHandler(async (_req, res) => {
-    const rows = await Event.aggregate<{
-      _id: string;
-      event_count: number;
-      first_seen: Date;
-      last_seen: Date;
+  asyncHandler(async (req, res) => {
+    const limit = parseLimit(req.query.limit, SESSIONS_DEFAULT_LIMIT, SESSIONS_MAX_LIMIT);
+    const offset = parseOffset(req.query.offset);
+
+    const [facet] = await Event.aggregate<{
+      meta: { total: number }[];
+      data: {
+        _id: string;
+        event_count: number;
+        first_seen: Date;
+        last_seen: Date;
+      }[];
     }>([
       {
         $group: {
@@ -94,15 +106,28 @@ app.get(
         },
       },
       { $sort: { last_seen: -1 } },
+      {
+        $facet: {
+          meta: [{ $count: "total" }],
+          data: [{ $skip: offset }, { $limit: limit }],
+        },
+      },
     ]);
-    res.json(
-      rows.map((r) => ({
+
+    const total = facet?.meta[0]?.total ?? 0;
+    const rows = facet?.data ?? [];
+
+    res.json({
+      sessions: rows.map((r) => ({
         session_id: r._id,
         event_count: r.event_count,
         first_seen: r.first_seen,
         last_seen: r.last_seen,
-      }))
-    );
+      })),
+      total,
+      limit,
+      offset,
+    });
   })
 );
 
@@ -126,10 +151,23 @@ app.get(
       res.status(400).json({ error: "Query pageUrl is required" });
       return;
     }
-    const clicks = await Event.find({
+    const limit = parseLimit(req.query.limit, HEATMAP_DEFAULT_LIMIT, HEATMAP_MAX_LIMIT);
+    const since = parseSince(req.query.since);
+    if (req.query.since != null && req.query.since !== "" && !since) {
+      res.status(400).json({ error: "Query since must be a valid ISO date" });
+      return;
+    }
+
+    const filter: Record<string, unknown> = {
       type: "click",
-      page_url: pageUrl,
-    })
+      page_url: pageUrl.trim(),
+    };
+    if (since) filter.timestamp = { $gte: since };
+
+    const total = await Event.countDocuments(filter);
+    const clicks = await Event.find(filter)
+      .sort({ timestamp: -1 })
+      .limit(limit)
       .select({
         x: 1,
         y: 1,
@@ -140,7 +178,14 @@ app.get(
       })
       .lean()
       .exec();
-    res.json(clicks);
+
+    res.json({
+      clicks,
+      total,
+      limit,
+      truncated: total > clicks.length,
+      since: since?.toISOString() ?? null,
+    });
   })
 );
 
