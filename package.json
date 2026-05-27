@@ -6,7 +6,8 @@
     "dev:server": "npm run build:tracker && npm run dev -w server",
     "dev:web": "npm run dev -w web",
     "dev": "npm run build:tracker && concurrently \"npm run dev -w server\" \"npm run dev -w web\"",
-    "build": "npm run build:tracker && npm run build -w server && npm run build -w web"
+    "build": "npm run build:tracker && npm run build -w server && npm run build -w web",
+    "test": "npm run test -w server"
   },
   "workspaces": ["server", "web", "tracker"],
   "devDependencies": {

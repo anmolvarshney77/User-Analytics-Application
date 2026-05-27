@@ -1,6 +1,8 @@
 export const isProduction = process.env.NODE_ENV === "production";
 
-export const INGEST_API_KEY = process.env.INGEST_API_KEY?.trim() ?? "";
+export function getIngestApiKey(): string {
+  return process.env.INGEST_API_KEY?.trim() ?? "";
+}
 
 function parseCorsOrigins(): string[] {
   const raw = process.env.CORS_ORIGINS?.trim();
@@ -25,7 +27,7 @@ export function assertProductionEnv(): void {
     console.error("CORS_ORIGINS is required when NODE_ENV=production");
     process.exit(1);
   }
-  if (!INGEST_API_KEY) {
+  if (!getIngestApiKey()) {
     console.warn(
       "Warning: INGEST_API_KEY is not set in production. POST /api/events is open to abuse."
     );
