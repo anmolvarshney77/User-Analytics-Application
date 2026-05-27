@@ -18,7 +18,8 @@ Small full-stack demo: a browser **tracker** sends `page_view` and `click` event
    Edit `server/.env`:
 
    - `MONGODB_URI` — your Atlas connection string (include database name in the path, e.g. `...mongodb.net/analytics?...`).
-   - `CORS_ORIGINS` — comma-separated list of allowed browser origins (no trailing slash). Include `http://localhost:3000` for the dashboard and `http://localhost:4000` for the demo served by the API.
+   - `CORS_ORIGINS` — comma-separated list of allowed browser origins (no trailing slash). Include `http://localhost:3000` for the dashboard and `http://localhost:4000` for the demo served by the API. **Required when `NODE_ENV=production`.**
+   - `INGEST_API_KEY` (optional locally, recommended on Render) — if set, `POST /api/events` requires `X-Analytics-Key` or body `api_key`. The `/demo/` page injects this into `data-api-key` automatically.
 
 2. **Dashboard**
 
@@ -71,16 +72,26 @@ npm run dev
 ## Tracker on your own site
 
 ```html
-<script src="https://YOUR-API-HOST/tracker.js" data-endpoint="https://YOUR-API-HOST" defer></script>
+<script
+  src="https://YOUR-API-HOST/tracker.js"
+  data-endpoint="https://YOUR-API-HOST"
+  data-api-key="YOUR_INGEST_KEY"
+  defer
+></script>
 ```
+
+Omit `data-api-key` when `INGEST_API_KEY` is not set on the API.
 
 If the script is served from the **same origin** as the API, you can omit `data-endpoint`. CORS must allow your site’s origin in `CORS_ORIGINS`.
 
-## Build
+## Build & test
 
 ```bash
 npm run build
+npm test          # server unit + integration tests (Vitest)
 ```
+
+CI (`.github/workflows/ci.yml`) runs build, tests, and web lint on push/PR.
 
 ## Deploy to Render (Blueprint)
 
@@ -91,6 +102,7 @@ This repo ships a [`render.yaml`](./render.yaml) Blueprint that deploys two web 
 3. On first deploy Render will prompt for these `sync: false` env vars. **Use the exact public URLs Render assigns** (open each service → copy the URL from the top of the page). If a name like `ua-api` is already taken globally, Render uses a suffix such as `https://ua-api-q3e5.onrender.com` — that full hostname is what you must use everywhere; `https://ua-api.onrender.com` without the suffix is often **not** your service and the dashboard will show `503` errors.
    - `ua-api` → `MONGODB_URI` — your Atlas connection string (must include the DB name in the path, e.g. `...mongodb.net/analytics?...`).
    - `ua-api` → `CORS_ORIGINS` — comma-separated origins with no trailing slash. Include your **actual** `ua-web` URL (e.g. `https://ua-web-q528.onrender.com`) and your **actual** `ua-api` URL if you use `/demo/` from the API host.
+   - `ua-api` → `INGEST_API_KEY` — random string (recommended). Same value is injected into the hosted demo page for the tracker.
    - `ua-web` → `NEXT_PUBLIC_API_BASE` — your **actual** `ua-api` URL (e.g. `https://ua-api-q3e5.onrender.com`, no trailing slash).
 4. After you set or change `NEXT_PUBLIC_API_BASE`, open `ua-web` → **Manual Deploy → Clear build cache & deploy** so the value is baked into the Next.js bundle. The Sessions page reads this at build time; wrong host = `Sessions failed: 503`.
 5. Health check: `GET https://<your-ua-api-host>/health` should return `{"ok":true,"db":true}`. Then open `https://<your-ua-web-host>/sessions`.
